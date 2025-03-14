@@ -274,7 +274,7 @@
         // Load more avatars with optimized loading
         loadMoreBtn.addEventListener('click', function() {
             currentPage++;
-            const startIdx = currentPage * avatarsPerPage - avatarsPerPage;
+            const startIdx = currentPage * avatarsPerPage - avatarsPerPage + 9; // Start from 9 since we already have 1-9
             const endIdx = Math.min(startIdx + avatarsPerPage - 1, totalAvatars);
             
             for (let i = startIdx; i <= endIdx; i++) {
@@ -286,7 +286,9 @@
                 const col = document.createElement('div');
                 col.className = 'col';
                 
-                const isChecked = {{ profile.avatar_id|default:0 }} === i ? 'checked' : '';
+                // Convert profile.avatar_id to number for comparison
+                const currentAvatarId = parseInt("{{ profile.avatar_id|default:0 }}");
+                const isChecked = currentAvatarId === i ? 'checked' : '';
                 
                 // Create optimized avatar element with placeholder
                 col.innerHTML = `
@@ -365,6 +367,42 @@
         
         // Call the optimization function
         optimizeImages();
+        
+        // Fix for avatar selection - ensure radio buttons work correctly
+        document.querySelectorAll('input[name="avatar_id"]').forEach(radio => {
+            radio.addEventListener('click', function() {
+                // Uncheck all other radio buttons
+                document.querySelectorAll('input[name="avatar_id"]').forEach(r => {
+                    r.checked = false;
+                });
+                // Check the clicked one
+                this.checked = true;
+            });
+        });
+        
+        // Fix for form submission - ensure avatar_id is included
+        document.querySelector('form[enctype="multipart/form-data"]').addEventListener('submit', function(e) {
+            const uploadChecked = uploadCheckbox.checked;
+            const fileInput = document.querySelector('input[name="avatar"]');
+            const avatarIdSelected = document.querySelector('input[name="avatar_id"]:checked');
+            
+            // If upload is checked but no file selected
+            if (uploadChecked && (!fileInput.files || fileInput.files.length === 0)) {
+                e.preventDefault();
+                alert('Please select a file to upload or choose a predefined avatar.');
+                return false;
+            }
+            
+            // If upload is not checked but no avatar selected
+            if (!uploadChecked && !avatarIdSelected) {
+                e.preventDefault();
+                alert('Please select an avatar.');
+                return false;
+            }
+            
+            // All good, continue with form submission
+            return true;
+        });
     });
 </script>
 {% endblock %} 

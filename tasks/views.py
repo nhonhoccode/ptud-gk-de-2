@@ -9,6 +9,7 @@ import random
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
+from django.core.cache import cache
 
 def landing_page(request):
     return render(request, 'landing.html')
@@ -150,20 +151,45 @@ def profile(request):
             user.save()
             
             # Handle avatar update
+            upload_avatar = request.POST.get('upload_avatar') == 'on'
             avatar_id = request.POST.get('avatar_id')
-            upload_avatar = request.FILES.get('avatar')
             
-            if upload_avatar:
-                profile.avatar = upload_avatar
+            if upload_avatar and request.FILES.get('avatar'):
+                # User uploaded a custom avatar
+                profile.avatar = request.FILES.get('avatar')
                 profile.avatar_id = None
                 profile.avatar_url = None
-            elif avatar_id:
-                profile.avatar = None
-                profile.avatar_id = avatar_id
-                profile.avatar_url = None
+                messages.success(request, 'Profile updated with custom avatar!')
+            elif not upload_avatar and avatar_id:
+                # User selected a predefined avatar
+                try:
+                    # Convert to integer and validate
+                    avatar_id_int = int(avatar_id)
+                    if 1 <= avatar_id_int <= 92:
+                        profile.avatar = None
+                        profile.avatar_id = avatar_id_int
+                        profile.avatar_url = None
+                        messages.success(request, f'Profile updated with avatar #{avatar_id_int}!')
+                    else:
+                        messages.error(request, 'Invalid avatar selection. Please try again.')
+                except (ValueError, TypeError):
+                    messages.error(request, 'Invalid avatar selection. Please try again.')
+            else:
+                # No changes to avatar
+                messages.success(request, 'Profile information updated!')
             
+            # Save the profile regardless
             profile.save()
-            messages.success(request, 'Profile updated successfully!')
+            
+            # Clear the avatar cache for this user
+            cache_keys = [
+                f'user_avatar_{user.id}_None',
+                f'user_avatar_{user.id}_38',
+                f'user_avatar_{user.id}_96',
+                f'user_avatar_{user.id}_200'
+            ]
+            for key in cache_keys:
+                cache.delete(key)
             
         elif action == 'change_password':
             password_form = PasswordChangeForm(user, request.POST)
