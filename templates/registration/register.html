@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register - Task Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">Register</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        {{ form|crispy }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Choose Your Avatar</h5>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="upload_avatar" name="upload_avatar">
+                            <label class="form-check-label" for="upload_avatar">Upload custom avatar</label>
+                        </div>
+                        
+                        <div id="custom-avatar-section" class="mb-3" style="display: none;">
+                            <label class="form-label">Upload Custom Avatar</label>
+                            {{ profile_form.avatar }}
+                        </div>
+                        
+                        <div id="avatar-selection-section">
+                            <div class="mb-3">
+                                <label class="form-label">Select from available avatars:</label>
+                            </div>
+                            
+                            <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3 mb-3">
+                                {% for value, text in profile_form.avatar_id.field.choices %}
+                                    {% if forloop.counter <= 12 %}
+                                        <div class="col">
+                                            <div class="form-check avatar-option">
+                                                <input class="form-check-input" type="radio" name="avatar_id" id="avatar_{{ value }}" value="{{ value }}" {% if forloop.first %}checked{% endif %}>
+                                                <label class="form-check-label d-block text-center" for="avatar_{{ value }}">
+                                                    <img src="https://avatar.iran.liara.run/public/{{ value }}" alt="Avatar {{ value }}" class="img-fluid rounded" style="width: 80px; height: 80px;">
+                                                    <small class="d-block mt-1">{{ text }}</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="load-more-avatars">
+                                    Load More Avatars
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Register
+                        </button>
+                        <a href="{% url 'login' %}" class="btn btn-outline-secondary">
+                            Already have an account? Login
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadCheckbox = document.getElementById('upload_avatar');
+        const customAvatarSection = document.getElementById('custom-avatar-section');
+        const avatarSelectionSection = document.getElementById('avatar-selection-section');
+        const loadMoreBtn = document.getElementById('load-more-avatars');
+        
+        let currentPage = 1;
+        const avatarsPerPage = 6;
+        const totalAvatars = 92;
+        
+        // Toggle between custom upload and predefined avatars
+        uploadCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                customAvatarSection.style.display = 'block';
+                avatarSelectionSection.style.display = 'none';
+            } else {
+                customAvatarSection.style.display = 'none';
+                avatarSelectionSection.style.display = 'block';
+            }
+        });
+        
+        // Load more avatars
+        loadMoreBtn.addEventListener('click', function() {
+            currentPage++;
+            const startIdx = (currentPage - 1) * avatarsPerPage + 13;
+            const endIdx = Math.min(startIdx + avatarsPerPage - 1, totalAvatars);
+            
+            const row = document.querySelector('.row.row-cols-2');
+            
+            for (let i = startIdx; i <= endIdx; i++) {
+                const col = document.createElement('div');
+                col.className = 'col';
+                
+                col.innerHTML = `
+                    <div class="form-check avatar-option">
+                        <input class="form-check-input" type="radio" name="avatar_id" id="avatar_${i}" value="${i}">
+                        <label class="form-check-label d-block text-center" for="avatar_${i}">
+                            <img src="https://avatar.iran.liara.run/public/${i}" alt="Avatar ${i}" class="img-fluid rounded" style="width: 80px; height: 80px;">
+                            <small class="d-block mt-1">Avatar ${i}</small>
+                        </label>
+                    </div>
+                `;
+                
+                row.appendChild(col);
+            }
+            
+            if (endIdx >= totalAvatars) {
+                loadMoreBtn.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %} 

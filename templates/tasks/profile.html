@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}My Profile - Task Management{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Profile Information -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-circle"></i> My Profile
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <img src="{{ profile.get_avatar }}" alt="Profile Avatar" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                        <h4>{{ user.username }}</h4>
+                        <p class="text-muted">
+                            {% if user.first_name or user.last_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% endif %}
+                        </p>
+                        <p class="text-muted">{{ user.email }}</p>
+                    </div>
+                    
+                    <button class="btn btn-outline-primary w-100 mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#editProfileForm">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </button>
+                    
+                    <button class="btn btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#changePasswordForm">
+                        <i class="fas fa-key"></i> Change Password
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Task Statistics -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie"></i> Task Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3 col-6 text-center mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <h3>{{ total_tasks }}</h3>
+                                <p class="mb-0">Total Tasks</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 text-center mb-3">
+                            <div class="p-3 bg-success bg-opacity-25 rounded">
+                                <h3>{{ completed_tasks }}</h3>
+                                <p class="mb-0">Completed</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 text-center mb-3">
+                            <div class="p-3 bg-info bg-opacity-25 rounded">
+                                <h3>{{ in_progress_tasks }}</h3>
+                                <p class="mb-0">In Progress</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 text-center mb-3">
+                            <div class="p-3 bg-warning bg-opacity-25 rounded">
+                                <h3>{{ pending_tasks }}</h3>
+                                <p class="mb-0">Pending</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Completion Rate</h5>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ completion_rate }}%;" 
+                                 aria-valuenow="{{ completion_rate }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ completion_rate|floatformat:1 }}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5>Recent Tasks</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for task in tasks|slice:":5" %}
+                                    <tr>
+                                        <td>{{ task.title }}</td>
+                                        <td>
+                                            {% if task.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            {% elif task.status == 'in_progress' %}
+                                                <span class="badge bg-info">In Progress</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ task.created|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No tasks yet</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'home' %}" class="btn btn-primary">
+                                <i class="fas fa-tasks"></i> View All Tasks
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Profile Form (Collapsed by default) -->
+    <div class="collapse mt-4" id="editProfileForm">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Edit Profile</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Change Avatar</h5>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="upload_avatar" name="upload_avatar">
+                            <label class="form-check-label" for="upload_avatar">Upload custom avatar</label>
+                        </div>
+                        
+                        <div id="custom-avatar-section" class="mb-3" style="display: none;">
+                            <label class="form-label">Upload Custom Avatar</label>
+                            <input type="file" class="form-control" name="avatar">
+                        </div>
+                        
+                        <div id="avatar-selection-section">
+                            <div class="mb-3">
+                                <label class="form-label">Select from available avatars:</label>
+                            </div>
+                            
+                            <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3 mb-3">
+                                {% for i in "123456789"|make_list %}
+                                    <div class="col">
+                                        <div class="form-check avatar-option">
+                                            <input class="form-check-input" type="radio" name="avatar_id" id="avatar_{{ i }}" value="{{ i }}" {% if profile.avatar_id == i|add:"0" %}checked{% endif %}>
+                                            <label class="form-check-label d-block text-center" for="avatar_{{ i }}">
+                                                <img src="https://avatar.iran.liara.run/public/{{ i }}" alt="Avatar {{ i }}" class="img-fluid rounded" style="width: 80px; height: 80px;">
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="load-more-avatars">
+                                    Load More Avatars
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#editProfileForm">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Change Password Form (Collapsed by default) -->
+    <div class="collapse mt-4" id="changePasswordForm">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Change Password</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="change_password">
+                    
+                    {{ password_form|crispy }}
+                    
+                    <div class="text-end mt-3">
+                        <button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#changePasswordForm">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-key"></i> Change Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadCheckbox = document.getElementById('upload_avatar');
+        const customAvatarSection = document.getElementById('custom-avatar-section');
+        const avatarSelectionSection = document.getElementById('avatar-selection-section');
+        const loadMoreBtn = document.getElementById('load-more-avatars');
+        
+        let currentPage = 1;
+        const avatarsPerPage = 12;
+        const totalAvatars = 92;
+        
+        // Toggle between custom upload and predefined avatars
+        uploadCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                customAvatarSection.style.display = 'block';
+                avatarSelectionSection.style.display = 'none';
+            } else {
+                customAvatarSection.style.display = 'none';
+                avatarSelectionSection.style.display = 'block';
+            }
+        });
+        
+        // Load more avatars
+        loadMoreBtn.addEventListener('click', function() {
+            currentPage++;
+            const startIdx = currentPage * avatarsPerPage - 3;
+            const endIdx = Math.min(startIdx + avatarsPerPage - 1, totalAvatars);
+            
+            const row = document.querySelector('.row.row-cols-2');
+            
+            for (let i = startIdx; i <= endIdx; i++) {
+                const col = document.createElement('div');
+                col.className = 'col';
+                
+                const isChecked = {{ profile.avatar_id|default:0 }} === i ? 'checked' : '';
+                
+                col.innerHTML = `
+                    <div class="form-check avatar-option">
+                        <input class="form-check-input" type="radio" name="avatar_id" id="avatar_${i}" value="${i}" ${isChecked}>
+                        <label class="form-check-label d-block text-center" for="avatar_${i}">
+                            <img src="https://avatar.iran.liara.run/public/${i}" alt="Avatar ${i}" class="img-fluid rounded" style="width: 80px; height: 80px;">
+                        </label>
+                    </div>
+                `;
+                
+                row.appendChild(col);
+            }
+            
+            if (endIdx >= totalAvatars) {
+                loadMoreBtn.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %} 

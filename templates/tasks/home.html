@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>My Tasks</h2>
+    </div>
+    <div class="col text-end">
+        <a href="{% url 'task_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Task
+        </a>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for task in tasks %}
+    <div class="col">
+        <div class="card h-100 task-card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">{{ task.title }}</h5>
+                <p class="card-text">{{ task.description|default:"No description" }}</p>
+                <div class="mb-2">
+                    {% if task.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif task.status == 'in_progress' %}
+                        <span class="badge bg-info">In Progress</span>
+                    {% else %}
+                        <span class="badge bg-success">Completed</span>
+                    {% endif %}
+                </div>
+                <p class="card-text">
+                    <small class="text-muted">
+                        Created: {{ task.created|date:"M d, Y" }}
+                        {% if task.finished %}
+                        <br>Completed: {{ task.finished|date:"M d, Y" }}
+                        {% endif %}
+                    </small>
+                </p>
+            </div>
+            <div class="card-footer bg-transparent border-top-0">
+                <div class="btn-group w-100">
+                    <a href="{% url 'task_update' task.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    {% if task.status != 'completed' %}
+                    <a href="{% url 'task_complete' task.pk %}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-check"></i> Complete
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'task_delete' task.pk %}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> You don't have any tasks yet.
+            <a href="{% url 'task_create' %}" class="alert-link">Create your first task</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %} 

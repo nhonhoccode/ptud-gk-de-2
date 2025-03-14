@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to Task Management{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <h1 class="display-4 mb-4">Welcome to Task Management</h1>
+            <p class="lead mb-4">A simple and efficient way to manage your tasks and boost productivity.</p>
+            <div class="mb-5">
+                <img src="https://avatar.iran.liara.run/public/1" alt="Task Management" class="img-fluid rounded shadow" style="max-width: 300px;">
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title"><i class="fas fa-tasks text-primary"></i> Task Management</h3>
+                            <p class="card-text">Create, update, and track your tasks with ease. Monitor progress and completion times.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title"><i class="fas fa-user-circle text-primary"></i> User Profiles</h3>
+                            <p class="card-text">Personalize your experience with custom avatars and user-specific task lists.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg px-4 me-2">
+                        <i class="fas fa-tasks"></i> Go to My Tasks
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-primary btn-lg px-4 me-2">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg px-4">
+                        <i class="fas fa-user-plus"></i> Register
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
