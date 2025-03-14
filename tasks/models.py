@@ -49,6 +49,22 @@ def save_user_profile(sender, instance, **kwargs):
             defaults={'avatar_id': random.randint(1, 92)}
         )
 
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    color = models.CharField(max_length=20, default='primary')  # Bootstrap color class
+    icon = models.CharField(max_length=50, default='fas fa-tasks')  # Font Awesome icon class
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name_plural = "Categories"
+        ordering = ['name']
+        unique_together = ['name', 'user']  # Prevent duplicate category names per user
+
 class Task(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -62,6 +78,7 @@ class Task(models.Model):
     finished = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
 
     def complete(self):
         self.status = 'completed'

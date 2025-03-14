@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.utils import timezone
-from .models import Task, UserProfile
-from .forms import TaskForm, UserRegistrationForm, UserProfileForm
+from .models import Task, UserProfile, Category
+from .forms import TaskForm, UserRegistrationForm, UserProfileForm, CategoryForm
 from django.contrib import messages
 import random
 from django.contrib.auth.models import User
@@ -58,7 +58,21 @@ def register(request):
 @login_required
 def home(request):
     tasks = Task.objects.filter(user=request.user)
-    return render(request, 'tasks/home.html', {'tasks': tasks})
+    categories = Category.objects.filter(user=request.user)
+    
+    # Filter by category if provided
+    category_id = request.GET.get('category')
+    if category_id:
+        tasks = tasks.filter(category_id=category_id)
+        selected_category = get_object_or_404(Category, id=category_id, user=request.user)
+    else:
+        selected_category = None
+    
+    return render(request, 'tasks/home.html', {
+        'tasks': tasks,
+        'categories': categories,
+        'selected_category': selected_category
+    })
 
 @login_required
 def task_create(request):
@@ -72,6 +86,9 @@ def task_create(request):
             return redirect('home')
     else:
         form = TaskForm()
+        # Only show categories belonging to the current user
+        form.fields['category'].queryset = Category.objects.filter(user=request.user)
+    
     return render(request, 'tasks/task_form.html', {'form': form, 'title': 'Create Task'})
 
 @login_required
@@ -88,6 +105,9 @@ def task_update(request, pk):
             return redirect('home')
     else:
         form = TaskForm(instance=task)
+        # Only show categories belonging to the current user
+        form.fields['category'].queryset = Category.objects.filter(user=request.user)
+    
     return render(request, 'tasks/task_form.html', {'form': form, 'title': 'Update Task'})
 
 @login_required
@@ -182,3 +202,71 @@ def profile(request):
     }
     
     return render(request, 'tasks/profile.html', context)
+
+# Category Management Views
+@login_required
+def category_list(request):
+    categories = Category.objects.filter(user=request.user)
+    return render(request, 'tasks/category_list.html', {'categories': categories})
+
+@login_required
+def category_create(request):
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save(commit=False)
+            category.user = request.user
+            category.save()
+            messages.success(request, 'Category created successfully!')
+            return redirect('category_list')
+    else:
+        form = CategoryForm()
+    
+    return render(request, 'tasks/category_form.html', {'form': form, 'title': 'Create Category'})
+
+@login_required
+def category_update(request, pk):
+    category = get_object_or_404(Category, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Category updated successfully!')
+            return redirect('category_list')
+    else:
+        form = CategoryForm(instance=category)
+    
+    return render(request, 'tasks/category_form.html', {'form': form, 'title': 'Update Category'})
+
+@login_required
+def category_delete(request, pk):
+    category = get_object_or_404(Category, pk=pk, user=request.user)
+    if request.method == 'POST':
+        # Count tasks in this category
+        task_count = Task.objects.filter(category=category).count()
+        
+        if task_count > 0:
+            # Option to reassign tasks or delete them
+            reassign_to = request.POST.get('reassign_to')
+            if reassign_to:
+                # Reassign tasks to another category
+                if reassign_to != 'none':
+                    new_category = get_object_or_404(Category, pk=reassign_to, user=request.user)
+                    Task.objects.filter(category=category).update(category=new_category)
+                else:
+                    # Set category to None
+                    Task.objects.filter(category=category).update(category=None)
+            
+        category.delete()
+        messages.success(request, 'Category deleted successfully!')
+        return redirect('category_list')
+    
+    # Get other categories for reassignment
+    other_categories = Category.objects.filter(user=request.user).exclude(pk=pk)
+    task_count = Task.objects.filter(category=category).count()
+    
+    return render(request, 'tasks/category_confirm_delete.html', {
+        'category': category,
+        'other_categories': other_categories,
+        'task_count': task_count
+    })

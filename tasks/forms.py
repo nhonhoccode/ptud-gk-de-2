@@ -1,14 +1,60 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Task, UserProfile
+from .models import Task, UserProfile, Category
 
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ['title', 'description', 'status']
+        fields = ['title', 'description', 'status', 'category']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+class CategoryForm(forms.ModelForm):
+    COLOR_CHOICES = [
+        ('primary', 'Blue'),
+        ('secondary', 'Gray'),
+        ('success', 'Green'),
+        ('danger', 'Red'),
+        ('warning', 'Yellow'),
+        ('info', 'Light Blue'),
+        ('dark', 'Black'),
+    ]
+    
+    ICON_CHOICES = [
+        ('fas fa-tasks', 'Tasks'),
+        ('fas fa-home', 'Home'),
+        ('fas fa-briefcase', 'Work'),
+        ('fas fa-graduation-cap', 'Education'),
+        ('fas fa-shopping-cart', 'Shopping'),
+        ('fas fa-users', 'Social'),
+        ('fas fa-dumbbell', 'Fitness'),
+        ('fas fa-book', 'Reading'),
+        ('fas fa-code', 'Coding'),
+        ('fas fa-utensils', 'Food'),
+        ('fas fa-plane', 'Travel'),
+        ('fas fa-calendar', 'Events'),
+        ('fas fa-money-bill', 'Finance'),
+        ('fas fa-heart', 'Health'),
+        ('fas fa-star', 'Important'),
+    ]
+    
+    color = forms.ChoiceField(
+        choices=COLOR_CHOICES,
+        widget=forms.RadioSelect(attrs={'class': 'color-select'}),
+    )
+    
+    icon = forms.ChoiceField(
+        choices=ICON_CHOICES,
+        widget=forms.RadioSelect(attrs={'class': 'icon-select'}),
+    )
+    
+    class Meta:
+        model = Category
+        fields = ['name', 'description', 'color', 'icon']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 2}),
         }
 
 class UserRegistrationForm(UserCreationForm):

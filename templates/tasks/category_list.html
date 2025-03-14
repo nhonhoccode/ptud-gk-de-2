@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Categories - Task Management{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Categories</h2>
+        </div>
+        <div class="col text-end">
+            <a href="{% url 'category_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Category
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-body">
+                    {% if categories %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Tasks</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for category in categories %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-{{ category.color }} me-2">
+                                                <i class="{{ category.icon }}"></i>
+                                            </span>
+                                            {{ category.name }}
+                                        </td>
+                                        <td>{{ category.description|default:"No description" }}</td>
+                                        <td>
+                                            <a href="{% url 'home' %}?category={{ category.id }}" class="text-decoration-none">
+                                                {{ category.tasks.count }} tasks
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="{% url 'category_update' category.pk %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                <a href="{% url 'category_delete' category.pk %}" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> You don't have any categories yet.
+                            <a href="{% url 'category_create' %}" class="alert-link">Create your first category</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

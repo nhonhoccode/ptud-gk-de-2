@@ -11,5 +11,12 @@ urlpatterns = [
     path('task/<int:pk>/delete/', views.task_delete, name='task_delete'),
     path('task/<int:pk>/complete/', views.task_complete, name='task_complete'),
     path('profile/', views.profile, name='profile'),
+    
+    # Category management
+    path('categories/', views.category_list, name='category_list'),
+    path('categories/new/', views.category_create, name='category_create'),
+    path('categories/<int:pk>/update/', views.category_update, name='category_update'),
+    path('categories/<int:pk>/delete/', views.category_delete, name='category_delete'),
+    
     path('logout/', LogoutView.as_view(next_page='landing', http_method_names=['get', 'post']), name='logout'),
 ] 
