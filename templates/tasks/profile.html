@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
+{% load image_tags %}
 
 {% block title %}My Profile - Task Management{% endblock %}
 
@@ -16,7 +17,7 @@
                 </div>
                 <div class="card-body text-center">
                     <div class="mb-4">
-                        <img src="{{ profile.get_avatar }}" alt="Profile Avatar" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% avatar_img profile size="large" css_class="img-fluid rounded-circle mb-3" alt="Profile Avatar" %}
                         <h4>{{ user.username }}</h4>
                         <p class="text-muted">
                             {% if user.first_name or user.last_name %}
@@ -101,11 +102,17 @@
                                         <td>{{ task.title }}</td>
                                         <td>
                                             {% if task.status == 'pending' %}
-                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-clock me-1"></i> Pending
+                                                </span>
                                             {% elif task.status == 'in_progress' %}
-                                                <span class="badge bg-info">In Progress</span>
+                                                <span class="badge bg-info">
+                                                    <i class="fas fa-spinner me-1"></i> In Progress
+                                                </span>
                                             {% else %}
-                                                <span class="badge bg-success">Completed</span>
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i> Completed
+                                                </span>
                                             {% endif %}
                                         </td>
                                         <td>{{ task.created|date:"M d, Y" }}</td>
@@ -171,7 +178,8 @@
                         
                         <div id="custom-avatar-section" class="mb-3" style="display: none;">
                             <label class="form-label">Upload Custom Avatar</label>
-                            <input type="file" class="form-control" name="avatar">
+                            <input type="file" class="form-control" name="avatar" accept="image/*">
+                            <small class="text-muted">Recommended size: 200x200 pixels, max 1MB</small>
                         </div>
                         
                         <div id="avatar-selection-section">
@@ -179,13 +187,13 @@
                                 <label class="form-label">Select from available avatars:</label>
                             </div>
                             
-                            <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3 mb-3">
+                            <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3 mb-3" id="avatar-container">
                                 {% for i in "123456789"|make_list %}
                                     <div class="col">
                                         <div class="form-check avatar-option">
                                             <input class="form-check-input" type="radio" name="avatar_id" id="avatar_{{ i }}" value="{{ i }}" {% if profile.avatar_id == i|add:"0" %}checked{% endif %}>
                                             <label class="form-check-label d-block text-center" for="avatar_{{ i }}">
-                                                <img src="https://avatar.iran.liara.run/public/{{ i }}" alt="Avatar {{ i }}" class="img-fluid rounded" style="width: 80px; height: 80px;">
+                                                {% optimized_img src="https://avatar.iran.liara.run/public/"|add:i|add:"?size=80" alt="Avatar "|add:i width=80 height=80 css_class="img-fluid rounded" %}
                                             </label>
                                         </div>
                                     </div>
@@ -246,6 +254,7 @@
         const customAvatarSection = document.getElementById('custom-avatar-section');
         const avatarSelectionSection = document.getElementById('avatar-selection-section');
         const loadMoreBtn = document.getElementById('load-more-avatars');
+        const avatarContainer = document.getElementById('avatar-container');
         
         let currentPage = 1;
         const avatarsPerPage = 12;
@@ -262,36 +271,100 @@
             }
         });
         
-        // Load more avatars
+        // Load more avatars with optimized loading
         loadMoreBtn.addEventListener('click', function() {
             currentPage++;
-            const startIdx = currentPage * avatarsPerPage - 3;
+            const startIdx = currentPage * avatarsPerPage - avatarsPerPage;
             const endIdx = Math.min(startIdx + avatarsPerPage - 1, totalAvatars);
             
-            const row = document.querySelector('.row.row-cols-2');
-            
             for (let i = startIdx; i <= endIdx; i++) {
+                // Skip if avatar already exists in the container
+                if (document.getElementById(`avatar_${i}`)) {
+                    continue;
+                }
+                
                 const col = document.createElement('div');
                 col.className = 'col';
                 
                 const isChecked = {{ profile.avatar_id|default:0 }} === i ? 'checked' : '';
                 
+                // Create optimized avatar element with placeholder
                 col.innerHTML = `
                     <div class="form-check avatar-option">
                         <input class="form-check-input" type="radio" name="avatar_id" id="avatar_${i}" value="${i}" ${isChecked}>
                         <label class="form-check-label d-block text-center" for="avatar_${i}">
-                            <img src="https://avatar.iran.liara.run/public/${i}" alt="Avatar ${i}" class="img-fluid rounded" style="width: 80px; height: 80px;">
+                            <div class="img-placeholder" style="width: 80px; height: 80px; border-radius: 8px; margin: 0 auto;"></div>
+                            <img 
+                                src="${getOptimizedAvatarUrl(i, 80)}" 
+                                alt="Avatar ${i}" 
+                                class="img-fluid rounded" 
+                                width="80" 
+                                height="80" 
+                                loading="lazy" 
+                                onload="this.previousElementSibling.style.display='none'"
+                            >
                         </label>
                     </div>
                 `;
                 
-                row.appendChild(col);
+                avatarContainer.appendChild(col);
             }
             
             if (endIdx >= totalAvatars) {
                 loadMoreBtn.style.display = 'none';
             }
         });
+        
+        // Function to get optimized avatar URL (prefers local static if available)
+        function getOptimizedAvatarUrl(avatarId, size) {
+            // Check if we're in development or production
+            const isProduction = window.location.hostname !== 'localhost' && 
+                                window.location.hostname !== '127.0.0.1';
+            
+            // In production, try to use local static files first
+            if (isProduction) {
+                return `/static/img/avatars/avatar_${avatarId}_${size}.webp`;
+            }
+            
+            // In development or as fallback, use the avatar service
+            return `https://avatar.iran.liara.run/public/${avatarId}?size=${size}`;
+        }
+        
+        // Optimize image loading with IntersectionObserver
+        const optimizeImages = () => {
+            if (!('IntersectionObserver' in window)) {
+                return; // Not supported, exit early
+            }
+            
+            const imageObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        if (img.dataset.src) {
+                            img.src = img.dataset.src;
+                            img.removeAttribute('data-src');
+                        }
+                        imageObserver.unobserve(img);
+                    }
+                });
+            }, {
+                rootMargin: '50px 0px', // Start loading when within 50px of viewport
+                threshold: 0.01
+            });
+            
+            // Observe all images with data-src attribute
+            document.querySelectorAll('img[data-src]').forEach(img => {
+                imageObserver.observe(img);
+            });
+            
+            // Also observe lazy-loaded images
+            document.querySelectorAll('img[loading="lazy"]').forEach(img => {
+                imageObserver.observe(img);
+            });
+        };
+        
+        // Call the optimization function
+        optimizeImages();
     });
 </script>
 {% endblock %} 

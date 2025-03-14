@@ -4,71 +4,185 @@
 {% block title %}{{ title }} - Task Management{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="card-title mb-0">{{ title }}</h4>
-                </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            {{ form.name|as_crispy_field }}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex align-items-center">
+                <i class="fas {% if 'Create' in title %}fa-plus-circle{% else %}fa-edit{% endif %} me-2"></i>
+                <h4 class="card-title mb-0">{{ title }}</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="id_name" name="name" placeholder="Category Name" value="{{ form.name.value|default:'' }}" required>
+                                <label for="id_name">Category Name</label>
+                            </div>
+                            {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                            {% endif %}
                         </div>
-                        
-                        <div class="mb-3">
-                            {{ form.description|as_crispy_field }}
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="id_description" name="description" placeholder="Description (optional)" style="height: 100px">{{ form.description.value|default:'' }}</textarea>
+                                <label for="id_description">Description (optional)</label>
+                            </div>
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors }}</div>
+                            {% endif %}
                         </div>
-                        
-                        <div class="mb-4">
-                            <label class="form-label">Category Color</label>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label class="form-label fw-medium mb-3">
+                                <i class="fas fa-palette me-2 text-primary"></i> Category Color
+                            </label>
                             <div class="row row-cols-2 row-cols-md-4 g-3 mb-3">
                                 {% for value, text in form.color.field.choices %}
                                     <div class="col">
-                                        <div class="form-check">
+                                        <div class="form-check color-option">
                                             <input class="form-check-input" type="radio" name="color" id="color_{{ value }}" value="{{ value }}" 
                                                 {% if form.color.value == value %}checked{% endif %}>
-                                            <label class="form-check-label d-flex align-items-center" for="color_{{ value }}">
-                                                <span class="badge bg-{{ value }} me-2">&nbsp;&nbsp;&nbsp;</span> {{ text }}
+                                            <label class="form-check-label d-flex align-items-center p-2 rounded" for="color_{{ value }}" style="background-color: rgba(var(--bs-{{ value }}-rgb), 0.1);">
+                                                <span class="badge bg-{{ value }} me-2 p-2">&nbsp;&nbsp;&nbsp;</span> {{ text }}
                                             </label>
                                         </div>
                                     </div>
                                 {% endfor %}
                             </div>
+                            {% if form.color.errors %}
+                                <div class="text-danger small">{{ form.color.errors }}</div>
+                            {% endif %}
                         </div>
-                        
-                        <div class="mb-4">
-                            <label class="form-label">Category Icon</label>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label class="form-label fw-medium mb-3">
+                                <i class="fas fa-icons me-2 text-primary"></i> Category Icon
+                            </label>
                             <div class="row row-cols-2 row-cols-md-3 g-3">
                                 {% for value, text in form.icon.field.choices %}
                                     <div class="col">
-                                        <div class="form-check">
+                                        <div class="form-check icon-option">
                                             <input class="form-check-input" type="radio" name="icon" id="icon_{{ forloop.counter }}" value="{{ value }}" 
                                                 {% if form.icon.value == value %}checked{% endif %}>
-                                            <label class="form-check-label d-flex align-items-center" for="icon_{{ forloop.counter }}">
-                                                <i class="{{ value }} me-2"></i> {{ text }}
+                                            <label class="form-check-label d-flex align-items-center p-2 rounded" for="icon_{{ forloop.counter }}">
+                                                <i class="{{ value }} me-2 fa-lg"></i> {{ text }}
                                             </label>
                                         </div>
                                     </div>
                                 {% endfor %}
                             </div>
+                            {% if form.icon.errors %}
+                                <div class="text-danger small">{{ form.icon.errors }}</div>
+                            {% endif %}
                         </div>
-                        
-                        <div class="mt-3">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Save
-                            </button>
-                            <a href="{% url 'category_list' %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancel
-                            </a>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card mb-4 preview-card">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">Preview</h5>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="d-inline-block p-3 rounded-3 mb-3" id="preview-badge">
+                                        <i id="preview-icon" class="{{ form.icon.value|default:'fas fa-tasks' }}"></i>
+                                        <span id="preview-name">{{ form.name.value|default:'Category Name' }}</span>
+                                    </div>
+                                    <p class="text-muted small">This is how your category will appear in the task list</p>
+                                </div>
+                            </div>
                         </div>
-                    </form>
-                </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'category_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i> Save Category
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update preview when form elements change
+        const nameInput = document.getElementById('id_name');
+        const colorInputs = document.querySelectorAll('input[name="color"]');
+        const iconInputs = document.querySelectorAll('input[name="icon"]');
+        
+        const previewBadge = document.getElementById('preview-badge');
+        const previewIcon = document.getElementById('preview-icon');
+        const previewName = document.getElementById('preview-name');
+        
+        // Initial setup
+        updatePreview();
+        
+        // Event listeners
+        nameInput.addEventListener('input', updatePreview);
+        colorInputs.forEach(input => {
+            input.addEventListener('change', updatePreview);
+            
+            // Add hover effect to color options
+            const label = input.nextElementSibling;
+            label.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = `rgba(var(--bs-${input.value}-rgb), 0.2)`;
+            });
+            label.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = `rgba(var(--bs-${input.value}-rgb), 0.1)`;
+            });
+        });
+        
+        iconInputs.forEach(input => {
+            input.addEventListener('change', updatePreview);
+            
+            // Add hover effect to icon options
+            const label = input.nextElementSibling;
+            label.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+            });
+            label.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = '';
+            });
+        });
+        
+        function updatePreview() {
+            // Get current values
+            const name = nameInput.value || 'Category Name';
+            
+            let color = 'primary';
+            colorInputs.forEach(input => {
+                if (input.checked) {
+                    color = input.value;
+                }
+            });
+            
+            let icon = 'fas fa-tasks';
+            iconInputs.forEach(input => {
+                if (input.checked) {
+                    icon = input.value;
+                }
+            });
+            
+            // Update preview
+            previewBadge.className = `d-inline-block p-3 rounded-3 mb-3 bg-${color} text-white`;
+            previewIcon.className = `${icon} me-2`;
+            previewName.textContent = name;
+        }
+    });
+</script>
 {% endblock %} 
